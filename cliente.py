@@ -21,7 +21,7 @@ if __name__ == "__main__":
         sys.exit()
     server_address = sys.argv[1]
     # Descobrir a porta do servidor de calculadora usando o binder
-    binder = xmlrpc.client.ServerProxy(f'http://{server_address}:65431')
+    binder = xmlrpc.client.ServerProxy(f'http://{server_address}:5000')
     calc_server_port = binder.discover_service('calculadora')
 
     if calc_server_port is None:
