@@ -20,14 +20,35 @@ if __name__ == "__main__":
         print(sys.argv)
         sys.exit()
     server_address = sys.argv[1]
+
     # Descobrir a porta do servidor de calculadora usando o binder
     binder = xmlrpc.client.ServerProxy(f'http://{server_address}:5000')
-    calc_server_port = binder.discover_service('calculadora')
+    chat_server_port = binder.discover_service('chat')
 
-    if calc_server_port is None:
+    if chat_server_port is None:
         print("Serviço de calculadora não encontrado.")
         exit(1)
+    else:
+        print("Achado")
 
     # Cria um cliente que se conecta ao servidor de calculadora na porta descoberta
-    calc_server = xmlrpc.client.ServerProxy(f'http://{server_address}:{calc_server_port}')
-    calcula(calc_server)
+    chat_server = xmlrpc.client.ServerProxy(f'http://{server_address}:{chat_server_port}')
+    #calcula(chat_server)
+
+    print("REGISTRA CERTO: ", chat_server.registra_usuario("teste"))
+
+    print("REGISTRA ERRADA: ", chat_server.registra_usuario("teste"))
+
+    print("serv CERTO: ", chat_server.criar_sala("sala_teste"))
+
+    print("serv ERRADO: ", chat_server.criar_sala("sala_teste"))
+
+    print("NOME ERRADO: ", chat_server.entrar_sala("test", "sala_teste"))
+
+    print("NOME SERV ERRADO: ", chat_server.entrar_sala("teste", "sala_tes"))
+
+    print("ENTRA CERTO: ", chat_server.entrar_sala("teste", "sala_teste"))
+
+    print("LISTA SALAS: ", chat_server.listar_salas())
+    
+    print("LISTA USUARIOS: ",chat_server.listar_usuarios("sala_teste"))
