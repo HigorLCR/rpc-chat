@@ -37,18 +37,11 @@ if __name__ == "__main__":
 
     print("REGISTRA CERTO: ", chat_server.registra_usuario("teste"))
 
-    print("REGISTRA ERRADA: ", chat_server.registra_usuario("teste"))
-
     print("serv CERTO: ", chat_server.criar_sala("sala_teste"))
 
-    print("serv ERRADO: ", chat_server.criar_sala("sala_teste"))
-
-    print("NOME ERRADO: ", chat_server.entrar_sala("test", "sala_teste"))
-
-    print("NOME SERV ERRADO: ", chat_server.entrar_sala("teste", "sala_tes"))
-
     print("ENTRA CERTO: ", chat_server.entrar_sala("teste", "sala_teste"))
+    print("ENTRA CERTO: ", chat_server.entrar_sala("admin", "sala_teste"))
 
-    print("LISTA SALAS: ", chat_server.listar_salas())
+    print("ENVIA MENSAGEM: ", chat_server.enviar_mensagem("admin", "sala_teste", "FALA AER", "teste"))
     
-    print("LISTA USUARIOS: ",chat_server.listar_usuarios("sala_teste"))
+    print("RECEBE MENSAGEM: ", chat_server.receber_mensagem("teste", "sala_teste"))

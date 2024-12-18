@@ -42,11 +42,50 @@ def entrar_sala(nome, nome_sala):
                     'conteudo': f'{nome} entrou na sala',
                     'timestamp': string_tempo,
                 })
-                print("USERS: ", usuarios_registrados)
-                print("SALA: ", salas)
                 return "Conectado"
             except:
                 return "Erro ao conectar"
+    return "Sala inexistente"
+
+def enviar_mensagem(nome, nome_sala, mensagem, recipiente=None):
+    if nome not in usuarios_registrados:
+        return "Usuário não registrado"
+    
+    for sala in salas:
+        if sala['nome'] == nome_sala:
+            try: 
+                agora = datetime.now()
+                string_tempo = agora.strftime("%d/%m/%Y %H:%M:%S")
+
+                sala['conexoes'].append(nome)
+                sala['mensagens'].append({
+                    'tipo': 'broadcast' if recipiente == None else 'unicast',
+                    'origem': nome,
+                    'destino': '' if recipiente == None else recipiente,
+                    'conteudo': mensagem,
+                    'timestamp': string_tempo,
+                })
+                return f"Mensagem enviada a {'broadcast' if recipiente == None else recipiente}"
+            except:
+                return "Erro ao conectar"
+    return "Sala inexistente"
+
+def receber_mensagem(nome, nome_sala):
+    if nome not in usuarios_registrados:
+        return "Usuário não registrado"
+    
+    for sala in salas:
+        if sala['nome'] == nome_sala:
+            try:
+                def filtro_msgs(mensagem):
+                    return mensagem['tipo'] == 'broadcast' or mensagem['destino'] == nome
+                
+                mensagens = filter(filtro_msgs, sala['mensagens'])
+
+                response =  list(mensagens)
+                return response
+            except:
+                return "Erro ao recuperar mensagens"
     return "Sala inexistente"
 
 def listar_salas():
@@ -75,6 +114,8 @@ if __name__ == '__main__':
     server.register_function(entrar_sala, "entrar_sala")
     server.register_function(listar_salas, "listar_salas")
     server.register_function(listar_usuarios, "listar_usuarios")
+    server.register_function(enviar_mensagem, "enviar_mensagem")
+    server.register_function(receber_mensagem, "receber_mensagem")
 
     # Registrar o servidor da calculadora no binder
     binder = xmlrpc.client.ServerProxy('http://localhost:5000')
