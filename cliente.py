@@ -42,6 +42,9 @@ if __name__ == "__main__":
     print("ENTRA CERTO: ", chat_server.entrar_sala("teste", "sala_teste"))
     print("ENTRA CERTO: ", chat_server.entrar_sala("admin", "sala_teste"))
 
+    print("SALAS: ", chat_server.listar_salas())
+    print("USERS: ", chat_server.listar_usuarios('sala_teste'))
+
     print("ENVIA MENSAGEM: ", chat_server.enviar_mensagem("admin", "sala_teste", "FALA AER", "teste"))
     
     print("RECEBE MENSAGEM: ", chat_server.receber_mensagem("teste", "sala_teste"))

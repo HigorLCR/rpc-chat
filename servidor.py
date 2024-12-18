@@ -30,21 +30,26 @@ def entrar_sala(nome, nome_sala):
     
     for sala in salas:
         if sala['nome'] == nome_sala:
-            try: 
-                agora = datetime.now()
-                string_tempo = agora.strftime("%d/%m/%Y %H:%M:%S")
+            print("CONEXOES: ", sala['conexoes'])
+            print(not nome in sala['conexoes'])
+            if not nome in sala['conexoes']:
+                try:
+                    agora = datetime.now()
+                    string_tempo = agora.strftime("%d/%m/%Y %H:%M:%S")
 
-                sala['conexoes'].append(nome)
-                sala['mensagens'].append({
-                    'tipo': 'broadcast',
-                    'origem': nome,
-                    'destino': '',
-                    'conteudo': f'{nome} entrou na sala',
-                    'timestamp': string_tempo,
-                })
-                return "Conectado"
-            except:
-                return "Erro ao conectar"
+                    sala['conexoes'].append(nome)
+                    sala['mensagens'].append({
+                        'tipo': 'broadcast',
+                        'origem': nome,
+                        'destino': '',
+                        'conteudo': f'{nome} entrou na sala',
+                        'timestamp': string_tempo,
+                    })
+                    return "Conectado"
+                except:
+                    return "Erro ao conectar"
+            else:
+                return "Usuario já conectado"
     return "Sala inexistente"
 
 def enviar_mensagem(nome, nome_sala, mensagem, recipiente=None):
@@ -57,7 +62,6 @@ def enviar_mensagem(nome, nome_sala, mensagem, recipiente=None):
                 agora = datetime.now()
                 string_tempo = agora.strftime("%d/%m/%Y %H:%M:%S")
 
-                sala['conexoes'].append(nome)
                 sala['mensagens'].append({
                     'tipo': 'broadcast' if recipiente == None else 'unicast',
                     'origem': nome,
