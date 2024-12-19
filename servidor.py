@@ -1,17 +1,27 @@
 from xmlrpc.server import SimpleXMLRPCServer
-from datetime import datetime
+from datetime import datetime, timedelta
 import xmlrpc.client
 
 usuarios_registrados = ['admin']
 salas = []
 
+#utilitarias
+
+def is_primeiro_tempo_depois(time1: str, time2: str) -> bool:
+    # Converter as strings de tempo para objetos datetime
+    dt1 = datetime.strptime(time1, "%d/%m/%Y %H:%M:%S")
+    dt2 = datetime.strptime(time2, "%d/%m/%Y %H:%M:%S")
+
+    # Comparar os tempos
+    return dt1 > dt2
+
 # Funções do chat
 def registra_usuario(nome):
     if any(usuario == nome for usuario in usuarios_registrados):
-        return "nome já existente. Por favor, insira outro nome de usuário"
+        return False
     else:
         usuarios_registrados.append(nome)
-        return "nome de usuário registrado!"
+        return True
     
 def criar_sala(nome_sala):
     if any(sala['nome'] == nome_sala for sala in salas):
@@ -30,8 +40,7 @@ def entrar_sala(nome, nome_sala):
     
     for sala in salas:
         if sala['nome'] == nome_sala:
-            print("CONEXOES: ", sala['conexoes'])
-            print(not nome in sala['conexoes'])
+
             if not nome in sala['conexoes']:
                 try:
                     agora = datetime.now()
@@ -75,6 +84,9 @@ def enviar_mensagem(nome, nome_sala, mensagem, recipiente=None):
     return "Sala inexistente"
 
 def receber_mensagem(nome, nome_sala):
+    dois_segs_atras = (datetime.now() - timedelta(seconds=2))
+    dois_segs_atras = dois_segs_atras.strftime("%d/%m/%Y %H:%M:%S")
+
     if nome not in usuarios_registrados:
         return "Usuário não registrado"
     
@@ -82,25 +94,40 @@ def receber_mensagem(nome, nome_sala):
         if sala['nome'] == nome_sala:
             try:
                 def filtro_msgs(mensagem):
-                    return mensagem['tipo'] == 'broadcast' or mensagem['destino'] == nome
+                    return (mensagem['tipo'] == 'broadcast' or mensagem['destino'] == nome) and is_primeiro_tempo_depois(mensagem['timestamp'], dois_segs_atras)
                 
-                mensagens = filter(filtro_msgs, sala['mensagens'])
-
-                response =  list(mensagens)
+                mensagens = map(lambda msg: f"[{msg['timestamp']}] {msg['tipo'] if msg['tipo'] == 'broadcast' else msg['origem']}: {msg['conteudo']}", list(filter(filtro_msgs, sala['mensagens'])))
+                response = list(mensagens)
                 return response
+            except:
+                return "Erro ao recuperar mensagens"
+    return "Sala inexistente"
+
+
+def receber_broadcast_inicial(nome_sala):
+    for sala in salas:
+        if sala['nome'] == nome_sala:
+            try:
+                def filtro_msgs(mensagem):
+                    return mensagem['tipo'] == 'broadcast'
+                
+                mensagens = map(lambda msg: f"[{msg['timestamp']}] {msg['tipo'] if msg['tipo'] == 'broadcast' else msg['origem']}: {msg['conteudo']}", list(filter(filtro_msgs, sala['mensagens'])))
+                response = list(mensagens)
+                print("MSGS: ", response)
+                return response[-50:]
             except:
                 return "Erro ao recuperar mensagens"
     return "Sala inexistente"
 
 def listar_salas():
     nomes_salas = [sala['nome'] for sala in salas]
-    return f'Salas: {nomes_salas}'
+    return nomes_salas
 
 def listar_usuarios(nome_sala):
     for sala in salas:
         if sala['nome'] == nome_sala:
             try: 
-                return f"Usuários: {sala['conexoes']}"
+                return sala['conexoes']
             except:
                 return "Erro ao retornar usuários conectados"
     return "Sala inexistente"
@@ -120,6 +147,7 @@ if __name__ == '__main__':
     server.register_function(listar_usuarios, "listar_usuarios")
     server.register_function(enviar_mensagem, "enviar_mensagem")
     server.register_function(receber_mensagem, "receber_mensagem")
+    server.register_function(receber_broadcast_inicial, "receber_broadcast_inicial")
 
     # Registrar o servidor da calculadora no binder
     binder = xmlrpc.client.ServerProxy('http://localhost:5000')

@@ -1,16 +1,6 @@
 import xmlrpc.client
+import time
 import sys
-
-
-# Função para realizar as operações de cálculo
-def calcula(calc_server):
-    a = int(input("Digite o primeiro número: "))
-    b = int(input("Digite o segundo número: "))
-
-    print(f"Soma: {calc_server.soma(a, b)}")
-    print(f"Subtração: {calc_server.subtracao(a, b)}")
-    print(f"Multiplicação: {calc_server.multiplicacao(a, b)}")
-    print(f"Divisão: {calc_server.divisao(a, b)}")
 
 
 if __name__ == "__main__":
@@ -33,18 +23,74 @@ if __name__ == "__main__":
 
     # Cria um cliente que se conecta ao servidor de calculadora na porta descoberta
     chat_server = xmlrpc.client.ServerProxy(f'http://{server_address}:{chat_server_port}')
-    #calcula(chat_server)
 
-    print("REGISTRA CERTO: ", chat_server.registra_usuario("teste"))
 
-    print("serv CERTO: ", chat_server.criar_sala("sala_teste"))
+    #fluxo inicial do cliente
+    usuario_registrado = False
+    usuario = ''
 
-    print("ENTRA CERTO: ", chat_server.entrar_sala("teste", "sala_teste"))
-    print("ENTRA CERTO: ", chat_server.entrar_sala("admin", "sala_teste"))
+    while (not usuario_registrado):
+        usuario = input("Registre-se com um nome de usuário:")
+        usuario_registrado = chat_server.registra_usuario(usuario)
+        
+        if not usuario_registrado:
+            print("Por favor, insira outro nome de usuário")
 
-    print("SALAS: ", chat_server.listar_salas())
-    print("USERS: ", chat_server.listar_usuarios('sala_teste'))
-
-    print("ENVIA MENSAGEM: ", chat_server.enviar_mensagem("admin", "sala_teste", "FALA AER", "teste"))
     
-    print("RECEBE MENSAGEM: ", chat_server.receber_mensagem("teste", "sala_teste"))
+    sair = False
+    #lobby
+    while(not sair):
+        funcao = 0
+        try:
+            funcao = int(input("1 - Listar salas\n2 - Entrar em sala\n3 - Criar sala\n4 - sair\nDigite a opção desejada: "))
+        except:
+            funcao = 0
+
+        emSala = False
+        nome_sala = ""
+
+        match(funcao):
+            case 1:
+                print("Salas existentes:\n")
+                salas = chat_server.listar_salas()
+                for sala in salas:
+                    print(f" - {sala}")
+                print("\n")
+            case 2:
+                nome_sala = input("Digite o nome da sala desejada: ")
+                status = chat_server.entrar_sala(usuario, nome_sala)
+
+                print(status)
+                if status == "Conectado":
+                    emSala = True
+
+                    usuarios = chat_server.listar_usuarios(nome_sala)
+                    broadcast = chat_server.receber_broadcast_inicial(nome_sala)
+                    print("Usuários conectados:\n")
+                    for user in usuarios:
+                        print(f" - {user}")
+
+                    for msg in broadcast:
+                        print(f"{msg}\n")
+                else:
+                    print(status)
+            case 3:
+                nome_sala = input("Digite o nome da nova sala: ")
+                status_criacao_sala = chat_server.criar_sala(nome_sala)
+
+                print(status_criacao_sala)
+            case 4:
+                sair = True
+                print("Saindo...")
+            case _:
+                print("Por favor, insira uma opção válida")
+
+        #dentro de uma sala
+        bufferMsg = []
+        while(emSala):
+            while True:
+                bufferMsg = bufferMsg + chat_server.receber_mensagem(usuario, nome_sala)
+                time.sleep(60) 
+
+            msg = input("Digite uma mensagem: ")
+            chat_server.enviar_mensagem(usuario, nome_sala, msg, recipiente=None)
