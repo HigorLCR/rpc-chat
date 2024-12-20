@@ -62,46 +62,52 @@ def entrar_sala(nome, nome_sala):
     return "Sala inexistente"
 
 def enviar_mensagem(nome, nome_sala, mensagem, recipiente=None):
-    if nome not in usuarios_registrados:
-        return "Usuário não registrado"
-    
-    for sala in salas:
-        if sala['nome'] == nome_sala:
-            try: 
-                agora = datetime.now()
-                string_tempo = agora.strftime("%d/%m/%Y %H:%M:%S")
+    try:
+        if nome not in usuarios_registrados:
+            return "Usuário não registrado"
 
-                sala['mensagens'].append({
-                    'tipo': 'broadcast' if recipiente == None else 'unicast',
-                    'origem': nome,
-                    'destino': '' if recipiente == None else recipiente,
-                    'conteudo': mensagem,
-                    'timestamp': string_tempo,
-                })
-                return f"Mensagem enviada a {'broadcast' if recipiente == None else recipiente}"
-            except:
-                return "Erro ao conectar"
-    return "Sala inexistente"
+        for sala in salas:
+            if sala['nome'] == nome_sala:
+                try: 
+                    agora = datetime.now()
+                    string_tempo = agora.strftime("%d/%m/%Y %H:%M:%S")
+
+                    sala['mensagens'].append({
+                        'tipo': 'broadcast' if recipiente == None else 'unicast',
+                        'origem': nome,
+                        'destino': '' if recipiente == None else recipiente,
+                        'conteudo': mensagem,
+                        'timestamp': string_tempo,
+                    })
+                    return f"Mensagem enviada a {'broadcast' if recipiente == None else recipiente}"
+                except:
+                    return "Erro ao conectar"
+        return "Sala inexistente"
+    except Exception as e:
+        print("ERRO: ", e)
 
 def receber_mensagem(nome, nome_sala):
-    dois_segs_atras = (datetime.now() - timedelta(seconds=2))
-    dois_segs_atras = dois_segs_atras.strftime("%d/%m/%Y %H:%M:%S")
+    try:
+        dois_segs_atras = (datetime.now() - timedelta(seconds=2))
+        dois_segs_atras = dois_segs_atras.strftime("%d/%m/%Y %H:%M:%S")
 
-    if nome not in usuarios_registrados:
-        return "Usuário não registrado"
-    
-    for sala in salas:
-        if sala['nome'] == nome_sala:
-            try:
-                def filtro_msgs(mensagem):
-                    return (mensagem['tipo'] == 'broadcast' or mensagem['destino'] == nome) and is_primeiro_tempo_depois(mensagem['timestamp'], dois_segs_atras)
-                
-                mensagens = map(lambda msg: f"[{msg['timestamp']}] {msg['tipo'] if msg['tipo'] == 'broadcast' else msg['origem']}: {msg['conteudo']}", list(filter(filtro_msgs, sala['mensagens'])))
-                response = list(mensagens)
-                return response
-            except:
-                return "Erro ao recuperar mensagens"
-    return "Sala inexistente"
+        if nome not in usuarios_registrados:
+            return "Usuário não registrado"
+
+        for sala in salas:
+            if sala['nome'] == nome_sala:
+                try:
+                    def filtro_msgs(mensagem):
+                        return (mensagem['tipo'] == 'broadcast' or mensagem['destino'] == nome) #and is_primeiro_tempo_depois(mensagem['timestamp'], dois_segs_atras)
+
+                    mensagens = map(lambda msg: f"[{msg['timestamp']}] {f"({msg['tipo']}){msg['origem']}" if msg['tipo'] == 'broadcast' else msg['origem']}: {msg['conteudo']}", list(filter(filtro_msgs, sala['mensagens'])))
+                    response = list(mensagens)
+                    return response
+                except:
+                    return "Erro ao recuperar mensagens"
+        return "Sala inexistente"
+    except Exception as e:
+        print("OUTRO ERRO: ", e)
 
 
 def receber_broadcast_inicial(nome_sala):
@@ -137,7 +143,7 @@ if __name__ == '__main__':
     # Configura o servidor
     server_port = 5100
     server = SimpleXMLRPCServer(('localhost', server_port))
-    print("Servidor de calculadora pronto e aguardando conexões...")
+    print("Servidor de chat pronto e aguardando conexões...")
 
     # Registra as funções da calculadora
     server.register_function(registra_usuario, "registra_usuario")

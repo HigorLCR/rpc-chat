@@ -1,6 +1,8 @@
 import xmlrpc.client
-import time
 import sys
+import os
+from inputimeout import inputimeout
+import re
 
 
 if __name__ == "__main__":
@@ -41,56 +43,83 @@ if __name__ == "__main__":
     #lobby
     while(not sair):
         funcao = 0
-        try:
-            funcao = int(input("1 - Listar salas\n2 - Entrar em sala\n3 - Criar sala\n4 - sair\nDigite a opção desejada: "))
-        except:
-            funcao = 0
+        while(funcao != 4 and funcao != 2):
+            try:
+                funcao = int(input("1 - Listar salas\n2 - Entrar em sala\n3 - Criar sala\n4 - sair\nDigite a opção desejada: "))
+            except:
+                funcao = 0
 
-        emSala = False
-        nome_sala = ""
+            emSala = False
+            nome_sala = ""
 
-        match(funcao):
-            case 1:
-                print("Salas existentes:\n")
-                salas = chat_server.listar_salas()
-                for sala in salas:
-                    print(f" - {sala}")
-                print("\n")
-            case 2:
-                nome_sala = input("Digite o nome da sala desejada: ")
-                status = chat_server.entrar_sala(usuario, nome_sala)
+            match(funcao):
+                case 1:
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    print("Salas existentes:\n")
+                    salas = chat_server.listar_salas()
+                    for sala in salas:
+                        print(f" - {sala}")
+                    print("\n")
+                case 2:
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    nome_sala = input("Digite o nome da sala desejada: ")
+                    status = chat_server.entrar_sala(usuario, nome_sala)
 
-                print(status)
-                if status == "Conectado":
-                    emSala = True
+                    if status == "Conectado":
+                        print("Conectando...")
+                        emSala = True
+                    else:
+                        print(status)
+                case 3:
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    nome_sala = input("Digite o nome da nova sala: ")
+                    status_criacao_sala = chat_server.criar_sala(nome_sala)
 
-                    usuarios = chat_server.listar_usuarios(nome_sala)
-                    broadcast = chat_server.receber_broadcast_inicial(nome_sala)
-                    print("Usuários conectados:\n")
-                    for user in usuarios:
-                        print(f" - {user}")
-
-                    for msg in broadcast:
-                        print(f"{msg}\n")
-                else:
-                    print(status)
-            case 3:
-                nome_sala = input("Digite o nome da nova sala: ")
-                status_criacao_sala = chat_server.criar_sala(nome_sala)
-
-                print(status_criacao_sala)
-            case 4:
-                sair = True
-                print("Saindo...")
-            case _:
-                print("Por favor, insira uma opção válida")
+                    print(status_criacao_sala)
+                case 4:
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    sair = True
+                    print("Saindo...")
+                case _:
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    print("Por favor, insira uma opção válida")
+            
 
         #dentro de uma sala
-        bufferMsg = []
-        while(emSala):
-            while True:
-                bufferMsg = bufferMsg + chat_server.receber_mensagem(usuario, nome_sala)
-                time.sleep(60) 
+        if emSala:
+            print(f"Conectado na sala {nome_sala}")
+            print("Usuários conectados:\n")
+            usuarios = chat_server.listar_usuarios(nome_sala)
+            for user in usuarios:
+                print(f" - {user}")
 
-            msg = input("Digite uma mensagem: ")
-            chat_server.enviar_mensagem(usuario, nome_sala, msg, recipiente=None)
+            broadcast = chat_server.receber_broadcast_inicial(nome_sala)
+            for msg in broadcast:
+                print(f"{msg}")
+            
+        while(emSala):
+                try:
+                    msg = inputimeout(prompt='Envie uma mensagem:', timeout=5) 
+                    print("Enviando...")
+                    resultado = re.search(r"<([^>]+)>", msg)
+                    
+                    if resultado:
+                        chat_server.enviar_mensagem(usuario, nome_sala, msg.split('>')[1], None if not resultado else resultado.group(1) ) 
+                    else:
+                      chat_server.enviar_mensagem(usuario, nome_sala, msg)
+                    
+                    if msg == '<sair>':
+                        emSala = False
+
+                except:
+                    novas = chat_server.receber_mensagem(usuario, nome_sala)
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    for msgHistorico in novas:
+                        print(msgHistorico)
+
+        
+        
+
+                
+
+        
